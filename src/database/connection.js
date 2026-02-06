@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { env } from "../../config/env.service.js"
+import { env } from "../../config/index.js"
 console.log(env.mongoURL);
 
 
