@@ -7,10 +7,9 @@ export const bootstrap = async () => {
     const app = express();
     app.use(express.json());
     await databaseConnection();
+    app.use('{*dummy}', (req, res) => res.status(404).json('invalid route'))
     app.use((error, req, res, next) => {
         res.status(500).json({ message: error.message });
-
-
     })
     app.listen(env.port, () => {
         console.log(`Server is running on port ${env.port}`);
