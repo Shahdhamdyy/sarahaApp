@@ -1,9 +1,10 @@
 import { userModel } from '../../database/index.js'
 import { ConflictException, NotFoundException } from '../../common/utils/response/index.js'
 import { ProviderEnums } from '../../common/index.js'
+import { findOne } from '../../database/database.service.js'
 export const signUp = async (data) => {
     let { userName, email, password } = data
-    let existingUser = await userModel.findOne({ email })
+    let existingUser = await findOne({ model: userModel, filter: { email } })
     if (existingUser) {
         return ConflictException({ message: "user Already Exists" })
     }
@@ -13,7 +14,7 @@ export const signUp = async (data) => {
 }
 export const Login = async (data) => {
     let { email, password } = data
-    let existingUser = await userModel.findOne({ email, password, provider: ProviderEnums.System })
+    let existingUser = await findOne({ model: userModel, filter: { email, password, provider: ProviderEnums.System } })
     if (existingUser) {
         return existingUser
     }
