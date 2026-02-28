@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { signUp, getUseById, Login ,generateAccessToken} from './auth.service.js'
+import { signUp, getUseById, getProfileById,Login ,generateAccessToken} from './auth.service.js'
 import { SuccessResponse } from '../../common/utils/response/index.js'
 import { auth } from '../../common/middleware/auth.js'
 import { signUpSchema ,loginSchema} from './auth.validation.js'
@@ -30,5 +30,15 @@ router.get("/generate-access-token",async(req,res)=>{
     let accessToken =await generateAccessToken(authorization)
  return  SuccessResponse({ res, message: "Access Token", status: 201, data: accessToken }
     )
+})
+router.get('/profile/:userId', auth, async (req, res, next) => {
+  try {
+    //req.params.userId da id profile i want to open 
+    //req.userId login user
+    const data = await getProfileById(req.params.userId, req.userId)
+    SuccessResponse({ res, message: "Profile Data", status: 200, data })
+  } catch (err) {
+    next(err)
+  }
 })
 export default router

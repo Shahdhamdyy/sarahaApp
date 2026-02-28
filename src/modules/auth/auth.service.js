@@ -69,3 +69,18 @@ export const generateAccessToken = (token) => {
 
 
 }
+
+export const getProfileById = async (profileId, viewerId) => {
+    //if i opened my profile i dont want to increase view count but if i opened other profile i want to increase view count by 1
+    if (profileId !== viewerId) {
+        await userModel.findByIdAndUpdate(profileId, { $inc: { viewCount: 1 } })
+    }
+    //i want to open profile data without password
+    const user = await userModel.findById(profileId).select("-password")
+    //if user not found with this id i will return USER NOT FOUND
+    if (!user) {
+        NotFoundException({ message: "User Not Found" })
+    }
+
+    return user
+}

@@ -42,7 +42,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: Object.values(RoleEnums),
         default: RoleEnums.User
-    }
+    },
+    viewCount: {
+  type: Number,
+  default: 0
+}
 })
 userSchema.virtual("userName").set(function (value) {
     let [firstName, lastName] = value.split(" ")
