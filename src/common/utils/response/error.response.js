@@ -45,6 +45,15 @@ export const ForbiddenException = ({ message = "ForbiddenException", extra = und
     });
 };
 export const globalErrorHandler = (error, req, res, next) => {
+    //  Handle Mongoose Validation Error
+    if (error?.name === "ValidationError") {
+        return res.status(400).json({
+            status: 400,
+            errorMessage: error.message,
+            extra: error.errors,
+        });
+    }
+
     const status = error.status
         ? error.status
         : error.cause
@@ -60,7 +69,7 @@ export const globalErrorHandler = (error, req, res, next) => {
         status,
         stack: mood ? error.stack : null,
         errorMessage: mood ? displayErrorMessage : defaultMessage,
-
+        extra
     });
 };
 

@@ -61,9 +61,6 @@ export const findById = async ({
     model,
     id
 }) => {
-    let doc = await model.findById(id)
-    return doc
+    return await model.findById(id)
 
-
-
-}
+} 

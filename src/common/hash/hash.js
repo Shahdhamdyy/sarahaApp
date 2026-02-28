@@ -1,5 +1,5 @@
 import { hash, compare } from 'bcrypt'
-import { env } from '../config/index.js';
+import { env } from '../../../config/env.service.js';
 
 export const generateHash = async (password) => {
     return await hash(password, + env.salt)
