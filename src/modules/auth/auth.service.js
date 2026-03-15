@@ -9,6 +9,7 @@ import { generateToken, decodedRefreshToken } from '../../common/security/securi
 import { set, get } from '../../database/redis.service.js'
 import { sendEmail } from '../../common/utils/email/sendEmail.js'
 import { event } from '../../common/utils/email/email.events.js'
+import crypto from 'crypto'
 import { incr, ttl, del } from '../../database/redis.service.js'
 export const signUp = async (data, file) => {
     const { userName, email, password, sharedProfileName } = data
@@ -308,4 +309,41 @@ export const updatePassword = async ({ userId, oldPassword, newPassword }) => {
     await user.save()
 
     return { message: "Password updated successfully" }
+}
+
+
+
+export const forgetPassword = async ({ email }) => {
+    const user = await userModel.findOne({ email })
+    if (!user) throw new BadRequestException({ message: "User not found" })
+
+    //generatre random token temporary for reset password and store it in redis with TTL of 15 minutes then send it to user email to verify that he is the owner of this account and allow him to reset password
+    const token = crypto.randomBytes(20).toString('hex')
+    // Store the token in Redis with a TTL of 15 minutes
+    await set({ key: `forgetPasswordToken:${token}`, value: user._id, ttl: 900 })
+
+    // Send the token to user's email
+    await sendEmail({
+        to: user.email,
+        subject: "Reset Your Password",
+        html: `<p>Use this code to reset your password: <b>${token}</b>. It expires in 15 minutes.</p>`
+    })
+
+
+    return { message: "Password reset OTP sent to your email" }
+}
+// Function to reset password using the token sent to email
+export const resetPassword = async ({ token, newPassword }) => {
+    // Get the user ID associated with the token from Redis
+    const userId = await get(`forgetPasswordToken:${token}`)
+    // If token is invalid or expired, throw an error
+    if (!userId) throw new BadRequestException({ message: "Token expired or invalid" })
+    // If token is valid, delete it from Redis to prevent reuse
+    await del(`forgetPasswordToken:${token}`)
+    // Hash the new password and update it in the database
+    const user = await userModel.findById(userId)
+    user.password = await generateHash(newPassword)
+    await user.save()
+
+    return { message: "Password reset successfully" }
 }

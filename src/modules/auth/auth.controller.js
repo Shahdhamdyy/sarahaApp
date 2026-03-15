@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { signUp, getUseById, updatePassword, confirmLogin2FA, verifyEmail, request2FA, verify2FA, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
+import { signUp, getUseById,resetPassword, updatePassword,forgetPassword, confirmLogin2FA, verifyEmail, request2FA, verify2FA, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
 import { SuccessResponse } from '../../common/utils/response/index.js'
 import { auth } from '../../common/middleware/auth.js'
 import { signUpSchema, loginSchema } from './auth.validation.js'
@@ -116,5 +116,19 @@ router.put('/update-password', auth, async (req, res) => {
   } catch (err) {
     res.status(400).json({ message: err.message })
   }
+})
+router.post('/forget-password', async (req, res) => {
+    const { email } = req.body
+    // Call the forgetPassword function to handle the password reset process, which may include sending a reset email to the user
+    const data = await forgetPassword({ email })
+    SuccessResponse({ res, message: data.message, status: 200 })
+})
+
+
+router.post('/reset-password', async (req, res) => {
+  // This endpoint is called after the user clicks the password reset link in their email and submits the new password
+    const { token, newPassword } = req.body
+    const data = await resetPassword({ token, newPassword })
+    SuccessResponse({ res, message: data.message, status: 200 })
 })
 export default router
