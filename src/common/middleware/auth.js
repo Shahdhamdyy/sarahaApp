@@ -1,8 +1,9 @@
 import jwt from 'jsonwebtoken'
 import { env } from '../../../config/index.js'
 import { decodeToken } from '../security/security.js'
-
-export const auth = (req, res, next) => {
+import { get } from '../../database/redis.service.js'
+import { UnauthorizedException } from '../utils/response/index.js'
+export const auth = async (req, res, next) => {
     let { authorization } = req.headers
 
     const [flag, token] = authorization.split(" ")
@@ -20,7 +21,19 @@ export const auth = (req, res, next) => {
                 UnauthorizedException({ message: "Unauthorized" })
             }
             let data = decodeToken(token)
+            let revokedToken = await get(
+                createRevokeKey({
+                    userId: data.id,
+                    token
+
+                })
+            )
+            if (revokedToken) {
+                UnauthorizedException({ message: "already Logged out" })
+            }
             req.userId = data.id
+            req.token = token
+            req.decoded = data
             next()
         default:
             break;

@@ -10,7 +10,10 @@ const userSignature = process.env.JWT_USER_SIGNATURE
 const adminSignature = process.env.JWT_ADMIN_SIGNATURE
 const userRefreshSignature = process.env.JWT_USER_REFRESH_SIGNATURE
 const adminRefreshSignature = process.env.JWT_ADMIN_REFRESH_SIGNATURE
-
+const BASE_URL = process.env.Base_URL
+const REDIS_URI = process.env.REDIS_URI
+const APP_EMAIL = process.env.APP_EMAIL
+const APP_PASSWORD = process.env.APP_PASSWORD
 export const env = {
     mongoURL,
     mood,
@@ -20,7 +23,11 @@ export const env = {
     userSignature,
     adminSignature,
     userRefreshSignature,
-    adminRefreshSignature
+    adminRefreshSignature,
+    BASE_URL,
+    REDIS_URI,
+    APP_EMAIL,
+    APP_PASSWORD 
 
 
 

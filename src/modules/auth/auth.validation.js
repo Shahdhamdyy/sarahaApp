@@ -14,9 +14,21 @@ export const signUpSchema = joi.object({
     //     'array.min': "At least one user must be selected",
     //     'array.max': "No more than 5 users can be selected",
     // }),
+    sharedProfileName: joi.string().min(3).max(20).required(),
 })
 export const loginSchema = joi.object({
     email: joi.string().email().required(),
     password: joi.string().min(6).max(20).required(),
 
+})
+
+export const fileSchema = joi.object({
+    file: joi.object({
+        originalname: joi.string().required(),
+        destination: joi.string().required(),
+        filename: joi.string().required(),
+        path: joi.string().required(),
+        mimetype: joi.string().valid('image/jpeg', 'image/png').required(),
+        size: joi.number().max(5 * 1024 * 1024).required(), // 5MB
+    }).required()
 })

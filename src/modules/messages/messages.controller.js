@@ -4,13 +4,14 @@ import { SuccessResponse } from '../../common/utils/response/index.js'
 import { validation } from '../../common/utils/validation.js'
 import { sendMessageSchema } from './messages.validation.js'
 import { auth } from '../../common/middleware/auth.js'
+import { multer_local } from '../../common/middleware/multer.js'
 const router = Router()
 
 
 
-router.post('/send-message/:receiverId', validation(sendMessageSchema),async (req, res) => {
+router.post('/send-message/:receiverId',  multer_local({ customPath: "users/images" }).single('image'),validation(sendMessageSchema),async (req, res) => {
 
-    let data = await sendMessage(req.body, req.params.receiverId)
+    let data = await sendMessage(req.body, req.params.receiverId, req.file)
     SuccessResponse({ res, message: "Message Sent Successfully", status: 201, data })
 })
 router.get('/get-all-messages',auth,async(req, res) => {

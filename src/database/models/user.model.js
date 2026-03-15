@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { GenderEnums, ProviderEnums,RoleEnums } from "../../common/index.js";
+import { GenderEnums, ProviderEnums, RoleEnums } from "../../common/index.js";
 
 
 const userSchema = new mongoose.Schema({
@@ -44,9 +44,24 @@ const userSchema = new mongoose.Schema({
         default: RoleEnums.User
     },
     viewCount: {
-  type: Number,
-  default: 0
-}
+        type: Number,
+        default: 0
+    },
+    profileImage: {
+        type: String
+    },
+    image:{
+        type: String
+    },
+    sharedProfileName: {
+        type: String,
+        unique: true,
+        required: true
+    },
+    isVerified: {
+        type: Boolean,
+        default: false
+    }
 })
 userSchema.virtual("userName").set(function (value) {
     let [firstName, lastName] = value.split(" ")

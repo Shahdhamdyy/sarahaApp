@@ -40,10 +40,10 @@ export const findOneAndDelete = async ({
 export const findOneAndUpdate = async ({
     model,
     filter = {},
-    data = {},
+    update = {},
     options = {}
 }) => {
-    return await model.findOneAndUpdate(filter, data, options)
+    return await model.findOneAndUpdate(filter, update, options)
 }
 export const insertOne = async ({
     model,

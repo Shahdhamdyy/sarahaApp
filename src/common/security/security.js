@@ -20,7 +20,7 @@ export const generateToken = (user) => {
     }
     let accessToken = jwt.sign({ id: user._id }, signature, {
         audience,
-        expiresIn: "1h"
+        expiresIn: "30m"
 
     })
     let refreshToken = jwt.sign({ id: user._id }, refereshSignature, {

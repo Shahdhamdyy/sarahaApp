@@ -2,13 +2,18 @@ import { messageModel } from '../../database/models/messages.js'
 import { insertOne, findById, findOneAndDelete, findAll, findOne } from '../../database/database.service.js'
 import { userModel } from '../../database/models/user.model.js'
 import { BadRequestException } from '../../common/utils/response/index.js'
+
 export const sendMessage = async (body, userId) => {
     console.log("USER ID:", userId)
     console.log("TYPE:", typeof userId)
-    let { message, image } = body
+    let { message } = body
     let existUser = await findById({ model: userModel, id: userId })
     if (!existUser) {
         BadRequestException({ message: "Invalid Receiver Id" })
+    }
+    let image = ''
+    if(file){
+        image = `${env.BASE_URL}/uploads/${file.filename}` 
     }
     let newMessage = await insertOne({
         model: messageModel,
