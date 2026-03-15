@@ -61,6 +61,9 @@ const userSchema = new mongoose.Schema({
     isVerified: {
         type: Boolean,
         default: false
+    },  twoFactorEnabled: {
+        type: Boolean,
+        default: false
     }
 })
 userSchema.virtual("userName").set(function (value) {

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { signUp, getUseById, verifyEmail, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
+import { signUp, getUseById, confirmLogin2FA, ribbon reasonverifyEmail, request2FA, verify2FA, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
 import { SuccessResponse } from '../../common/utils/response/index.js'
 import { auth } from '../../common/middleware/auth.js'
 import { signUpSchema, loginSchema } from './auth.validation.js'
@@ -88,5 +88,22 @@ router.post('/logout', auth, async (req, res) => {
   return SuccessResponse({ res, message: "Logout Successfully", status: 200 })
 })
 
+
+
+
+router.post('/2fa/request', auth, request2FA);
+router.post('/2fa/verify', auth, verify2FA);
+router.post('/login/confirm', async (req, res) => {
+  try {
+    // This endpoint is called after the user submits the OTP for 2FA verification
+    const { userId, otp } = req.body
+    // Verify the OTP and complete the login process, then generate access and refresh tokens
+    const tokens = await confirmLogin2FA({ userId, otp })
+    // Return the tokens to the client
+    SuccessResponse({ res, message: "Login confirmed", status: 200, data: tokens })
+  } catch (err) {
+    res.status(400).json({ message: err.message })
+  }
+})
 
 export default router

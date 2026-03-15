@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken'
 import { env } from '../../../config/index.js'
 import { generateToken, decodedRefreshToken } from '../../common/security/security.js'
 import { set, get } from '../../database/redis.service.js'
-// import { sendEmail } from '../../common/utils/email/sendEmail.js'
+import { sendEmail } from '../../common/utils/email/sendEmail.js'
 import { event } from '../../common/utils/email/email.events.js'
 import { incr, ttl, del } from '../../database/redis.service.js'
 export const signUp = async (data, file) => {
@@ -114,6 +114,27 @@ export const Login = async (data, host) => {
 
     //  login success -->remove attempts
     await del(attemptsKey)
+    // 2FA check
+    // If 2FA enabled → generate OTP, store in Redis, send to email, and ask user to verify OTP before completing login
+    if (existingUser.twoFactorEnabled) {
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString()
+        // Store the OTP in Redis with a TTL of 5 minutes
+        await set({ key: `login2fa:${existingUser._id}`, value: otp, ttl: 300 })
+// Send OTP to email
+        await sendEmail({
+            to: existingUser.email,
+            subject: "Login Verification OTP",
+            html: `<p>Your login OTP is: <b>${otp}</b>. It expires in 5 minutes.</p>`
+        })
+        // Return response indicating that OTP has been sent and 2FA verification is required
+        return {
+            message: "OTP sent to your email. Please verify to complete login",
+            twoFactor: true,
+            userId: existingUser._id
+        }
+    }
+    // 2FA disabled → generate tokens
 
     let { accessToken, refreshToken } = generateToken(existingUser)
 
@@ -185,4 +206,87 @@ export const Logout = async (req) => {
         ttl: req.decoded.iat + 30 * 60
     }) // i will revoke token for 30 minutes after logout because access token expire in 1 hour and i want to make sure that user cant use the same token after logout
 
+}
+
+
+
+
+
+
+//  2-step-verification :
+// • Implement a 2-step-verification enabling endpoint:
+// • If a user wants to enable 2 step verification on his account, he will call this endpoint while logged in then an OTP will be sent to his account.
+// • With that OTP he needs to send it to another endpoint to verify that OTP and enable the 2-step-verification on his account
+
+//first endpoint to request OTP and send it to email then second endpoint to verify OTP and enable 2FA on user account
+export const request2FA = async (req, res) => {
+    try {
+        const userId = req.userId;
+        const user = await userModel.findById(userId);
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const userEmail = user.email; //email of the user to send OTP
+
+
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Store the OTP in Redis with a TTL of 5 minutes
+        await set({ key: `2fa:${userId}`, value: otp, ttl: 300 });
+
+        // Send OTP to email
+        await sendEmail({
+            to: userEmail,
+            subject: "Your 2-Step Verification OTP",
+            html: `<p>Your OTP code is: <b>${otp}</b>. It expires in 5 minutes.</p>`
+        });
+
+
+        res.status(200).json({ message: "OTP sent to your email. Please verify to enable 2FA." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to generate OTP" });
+    }
+};
+
+// Endpoint to verify OTP and enable 2FA
+export const verify2FA = async (req, res) => {
+    try {
+
+        const userId = req.userId;
+        const { otp } = req.body;
+        // Get the stored OTP from Redis
+        const storedOTP = await get(`2fa:${userId}`);
+        if (!storedOTP) return res.status(400).json({ message: "OTP expired or not found" });
+        if (otp !== storedOTP) return res.status(400).json({ message: "Invalid OTP" });
+
+        // Enable 2FA on user account
+        await userModel.findByIdAndUpdate(userId, { twoFactorEnabled: true });
+
+        // Delete OTP from Redis after enabling 2FA
+        await del(`2fa:${userId}`);
+
+        res.status(200).json({ message: "2FA enabled successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Failed to verify OTP" });
+    }
+};
+
+
+export const confirmLogin2FA = async ({ userId, otp }) => {
+    // Get the stored OTP from Redis
+    const storedOTP = await get(`login2fa:${userId}`)
+    // If OTP not found or expired
+    if (!storedOTP) throw new Error("OTP expired or not found")
+        // If OTP does not match
+    if (otp !== storedOTP) throw new Error("Invalid OTP")
+// OTP is valid → generate tokens and remove OTP from Redis
+    await del(`login2fa:${userId}`)
+    // Get user data to generate tokens
+    const user = await userModel.findById(userId)
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } = generateToken(user)
+
+    return { accessToken, refreshToken }
 }

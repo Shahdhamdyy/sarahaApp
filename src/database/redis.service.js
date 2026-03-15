@@ -1,7 +1,7 @@
 import { client } from './redis.js'
 
-export const createRevokeKey=({userId,token}) => {
-    return `revokeToken:${req.userId}::${req.token}`
+export const createRevokeKey = ({ userId, token }) => {
+    return `revokeToken:${userId}::${token}`
 }
 
 // Function to store a value in Redis

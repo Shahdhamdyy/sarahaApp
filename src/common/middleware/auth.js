@@ -3,6 +3,7 @@ import { env } from '../../../config/index.js'
 import { decodeToken } from '../security/security.js'
 import { get } from '../../database/redis.service.js'
 import { UnauthorizedException } from '../utils/response/index.js'
+import { createRevokeKey } from '../../database/redis.service.js'
 export const auth = async (req, res, next) => {
     let { authorization } = req.headers
 
