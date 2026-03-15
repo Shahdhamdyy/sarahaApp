@@ -121,7 +121,7 @@ export const Login = async (data, host) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString()
         // Store the OTP in Redis with a TTL of 5 minutes
         await set({ key: `login2fa:${existingUser._id}`, value: otp, ttl: 300 })
-// Send OTP to email
+        // Send OTP to email
         await sendEmail({
             to: existingUser.email,
             subject: "Login Verification OTP",
@@ -279,9 +279,9 @@ export const confirmLogin2FA = async ({ userId, otp }) => {
     const storedOTP = await get(`login2fa:${userId}`)
     // If OTP not found or expired
     if (!storedOTP) throw new Error("OTP expired or not found")
-        // If OTP does not match
+    // If OTP does not match
     if (otp !== storedOTP) throw new Error("Invalid OTP")
-// OTP is valid → generate tokens and remove OTP from Redis
+    // OTP is valid → generate tokens and remove OTP from Redis
     await del(`login2fa:${userId}`)
     // Get user data to generate tokens
     const user = await userModel.findById(userId)
@@ -289,4 +289,23 @@ export const confirmLogin2FA = async ({ userId, otp }) => {
     const { accessToken, refreshToken } = generateToken(user)
 
     return { accessToken, refreshToken }
+}
+
+// Function to update user password
+export const updatePassword = async ({ userId, oldPassword, newPassword }) => {
+    // Get user data by ID
+    const user = await userModel.findById(userId)
+    // If user not found, throw an error
+    if (!user) throw new BadRequestException({ message: "User not found" })
+
+    // Compare the old password with the stored hash
+    const isMatched = await compareHash(oldPassword, user.password)
+    // If old password is incorrect, throw an error
+    if (!isMatched) throw new BadRequestException({ message: "Old password is incorrect" })
+
+    // Hash the new password and update it in the database
+    user.password = await generateHash(newPassword)
+    await user.save()
+
+    return { message: "Password updated successfully" }
 }

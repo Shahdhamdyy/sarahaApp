@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { signUp, getUseById, confirmLogin2FA, ribbon reasonverifyEmail, request2FA, verify2FA, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
+import { signUp, getUseById, updatePassword, confirmLogin2FA, verifyEmail, request2FA, verify2FA, getProfileById, Login, Logout, generateAccessToken } from './auth.service.js'
 import { SuccessResponse } from '../../common/utils/response/index.js'
 import { auth } from '../../common/middleware/auth.js'
 import { signUpSchema, loginSchema } from './auth.validation.js'
@@ -106,4 +106,15 @@ router.post('/login/confirm', async (req, res) => {
   }
 })
 
+
+router.put('/update-password', auth, async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body
+    const data = await updatePassword({ userId: req.userId, oldPassword, newPassword })
+
+    SuccessResponse({ res, message: data.message, status: 200 })
+  } catch (err) {
+    res.status(400).json({ message: err.message })
+  }
+})
 export default router
