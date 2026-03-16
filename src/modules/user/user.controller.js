@@ -23,6 +23,9 @@ router.get('/get-user-data', async (req, res) => {
 })
 //update image too
 router.put('/update-user-profile', multer_local({ customPath: "users/images" }).single('image'), auth, async (req, res) => {
+
+  console.log("BODY:", req.body)
+  console.log("FILE:", req.file)
   let updatedProfile = await updateUserProfile(req.userId, req.body, req.file)
   SuccessResponse({ res, message: "User Profile updated successfully", status: 200, data: updatedProfile })
 })

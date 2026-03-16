@@ -18,7 +18,7 @@ export const getUserProfile = async (userId) => {
         throw NotFoundException({ message: "User Not Found" })
     } else {
         await set({
-            key: redisKey,
+            key: genKey(userId),
             value: userData,
             ttl: 60
         })
@@ -27,7 +27,7 @@ export const getUserProfile = async (userId) => {
 }
 
 
-export const shareProfileLink = async (data) => {
+export const shareProfileLink = async (userId) => {
     let userData = await findOne({ model: userModel, filter: { _id: userId }, select: '-password' })
     if (!userData) {
         throw NotFoundException({ message: "User Not Found" })
@@ -51,20 +51,29 @@ export const getUserData = async (data) => {
     return userData
 }
 export const updateUserProfile = async (userId, data, file) => {
+
+    console.log("USER ID:", userId)
+    console.log("DATA:", data)
+
     let updateData = { ...data }
+
     if (file) {
         updateData.profileImage = `${env.BASE_URL}/uploads/${file.filename}`
     }
-    let updatedUser = await findOneAndUpdate({ model: userModel, filter: { _id: userId }, update: updateData, options: { new: true } })
-    if (updatedUser) {
-        // await set({
-        //     key: (genKey(userId)),
-        //     value: updatedUser,
-        //     ttl: 60
-        // })
-        await del(genKey(userId))
 
+    const updatedUser = await findOneAndUpdate({
+        model: userModel,
+        filter: { _id: userId },
+        update: updateData,
+        options: { new: true }
+    })
+
+    if (!updatedUser) {
+        throw new Error("User not found")
     }
+
+    await del(genKey(userId))
+
     return updatedUser
 }
 export const deleteUser = async (userId) => {

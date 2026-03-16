@@ -1,19 +1,23 @@
 export const findOne = async ({
-    model,//=userModel
-    filter = {},//=={email,password,provider}
-    select = '',//-password,-id
+    model,
+    filter = {},
+    select = '',
     options = {}
 }) => {
-    let doc = await model.findOne(filter)
-    console.log(doc);
-    if (select.length) {
-        doc.select(select)
-    }
-    if (options.populate) {
-        doc.populate(options.populate)
-    }
-    return doc
 
+    let query = model.findOne(filter)
+
+    if (select.length) {
+        query = query.select(select)
+    }
+
+    if (options.populate) {
+        query = query.populate(options.populate)
+    }
+
+    const doc = await query
+
+    return doc
 }
 export const findAll = async ({
     model,

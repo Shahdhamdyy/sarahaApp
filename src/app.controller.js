@@ -5,15 +5,16 @@ import { globalErrorHandler } from "./common/utils/response/index.js"
 import authRouter from "./modules/auth/auth.controller.js"
 import messagesRouter from "./modules/messages/messages.controller.js"
 import userRouter from "./modules/user/user.controller.js"
-import { connectRedis,client } from "./database/index.js"
+import { connectRedis, client } from "./database/index.js"
 export const bootstrap = async () => {
     const app = express();
-    app.use(express.json());
+    app.use(express.json())
+    app.use(express.urlencoded({ extended: true }))
     await connectRedis();
     app.use('/uploads', express.static('uploads'))
     app.use('/auth', authRouter);
     app.use('/messages', messagesRouter);
-    app.use('/user',userRouter)
+    app.use('/user', userRouter)
 
     await databaseConnection();
     app.use('{*dummy}', (req, res) => res.status(404).json('invalid route'))

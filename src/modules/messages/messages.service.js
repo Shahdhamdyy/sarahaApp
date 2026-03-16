@@ -2,8 +2,8 @@ import { messageModel } from '../../database/models/messages.js'
 import { insertOne, findById, findOneAndDelete, findAll, findOne } from '../../database/database.service.js'
 import { userModel } from '../../database/models/user.model.js'
 import { BadRequestException } from '../../common/utils/response/index.js'
-
-export const sendMessage = async (body, userId) => {
+import { env } from '../../../config/index.js'
+export const sendMessage = async (body, userId,file) => {
     console.log("USER ID:", userId)
     console.log("TYPE:", typeof userId)
     let { message } = body
