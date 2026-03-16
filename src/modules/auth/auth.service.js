@@ -313,37 +313,104 @@ export const updatePassword = async ({ userId, oldPassword, newPassword }) => {
 
 
 
-export const forgetPassword = async ({ email }) => {
-    const user = await userModel.findOne({ email })
-    if (!user) throw new BadRequestException({ message: "User not found" })
+// export const forgetPassword = async ({ email }) => {
+//     const user = await userModel.findOne({ email })
+//     if (!user) throw new BadRequestException({ message: "User not found" })
 
-    //generatre random token temporary for reset password and store it in redis with TTL of 15 minutes then send it to user email to verify that he is the owner of this account and allow him to reset password
-    const token = crypto.randomBytes(20).toString('hex')
-    // Store the token in Redis with a TTL of 15 minutes
-    await set({ key: `forgetPasswordToken:${token}`, value: user._id, ttl: 900 })
+//     //generatre random token temporary for reset password and store it in redis with TTL of 15 minutes then send it to user email to verify that he is the owner of this account and allow him to reset password
+//     const token = crypto.randomBytes(20).toString('hex')
+//     // Store the token in Redis with a TTL of 15 minutes
+//     await set({ key: `forgetPasswordToken:${token}`, value: user._id, ttl: 900 })
 
-    // Send the token to user's email
-    await sendEmail({
-        to: user.email,
-        subject: "Reset Your Password",
-        html: `<p>Use this code to reset your password: <b>${token}</b>. It expires in 15 minutes.</p>`
-    })
+//     // Send the token to user's email
+//     await sendEmail({
+//         to: user.email,
+//         subject: "Reset Your Password",
+//         html: `<p>Use this code to reset your password: <b>${token}</b>. It expires in 15 minutes.</p>`
+//     })
 
 
-    return { message: "Password reset OTP sent to your email" }
+//     return { message: "Password reset OTP sent to your email" }
+// }
+
+
+// // Function to reset password using the token sent to email
+// export const resetPassword = async ({ token, newPassword }) => {
+//     // Get the user ID associated with the token from Redis
+//     const userId = await get(`forgetPasswordToken:${token}`)
+//     // If token is invalid or expired, throw an error
+//     if (!userId) throw new BadRequestException({ message: "Token expired or invalid" })
+//     // If token is valid, delete it from Redis to prevent reuse
+//     await del(`forgetPasswordToken:${token}`)
+//     // Hash the new password and update it in the database
+//     const user = await userModel.findById(userId)
+//     user.password = await generateHash(newPassword)
+//     await user.save()
+
+//     return { message: "Pas Isword reset successfully" }
+// }
+
+
+
+export const forgetPassword = async (data) => {
+
+    let { email } = data
+    let existUser = await findOne({ model: userModel, filter: { email } })
+    if (!existUser) {
+        throw new BadRequestException({ message: "User not found" })
+    }
+    else {
+        let code = Math.ceil(Math.random() * 10000)
+        code = code.toString().padStart(4, 0)
+
+        await set({
+            key: `otp::${existUser._id}`,
+            value: await generateHash(code),
+            ttl: 60 * 5
+        })
+        sendEmail({
+            to: existUser.email,
+            subject: "Reset Your Password",
+            html: `<p>Use this code to reset your password: <b>${code}</b>. It expires in 5 minutes.</p>`
+        })
+        return { message: "Password reset OTP sent to your email" }
+
+    }
 }
-// Function to reset password using the token sent to email
-export const resetPassword = async ({ token, newPassword }) => {
-    // Get the user ID associated with the token from Redis
-    const userId = await get(`forgetPasswordToken:${token}`)
-    // If token is invalid or expired, throw an error
-    if (!userId) throw new BadRequestException({ message: "Token expired or invalid" })
-    // If token is valid, delete it from Redis to prevent reuse
-    await del(`forgetPasswordToken:${token}`)
-    // Hash the new password and update it in the database
-    const user = await userModel.findById(userId)
-    user.password = await generateHash(newPassword)
-    await user.save()
 
-    return { message: "Password reset successfully" }
+
+
+export const resetPassword = async (data) => {
+    let { otp, email, password } = data
+    let existedUser = await findOne({ model: userModel, filter: { email } })
+    if (!existedUser) {
+        throw new BadRequestException({ message: "User not found" })
+    }
+    let hatshOtp = await get(`otp::${existedUser._id}`)
+    if (await compareHash(otp, hatshOtp)) {
+        //password come from the fromt existeduser.pass from redis
+        if (await compareHash(password, existedUser.password)) {
+            throw new BadRequestException({ message: "New password must be different from old password" })
+        }
+        else {
+            let hashPassword = await generateHash(password)
+            let updatedUser = await findOneAndUpdate({
+                model: userModel,
+                filter: { _id: existedUser._id },
+                update: { password: hashPassword },
+                options: { new: true }
+            })
+            if (updatedUser) {
+
+                await del(`otp::${existedUser._id}`)
+                return updatedUser
+            }
+            else {
+                throw new BadRequestException({ message: "something went wrong" })
+            }
+        }
+    } else {
+        throw new BadRequestException({ message: "Invalid OTP" })
+    }
+
 }
